@@ -134,6 +134,10 @@ def check(request, course_id, lesson_id):
         qa = request.session['qa']  # could have been changed in assess_answer #TODO: smells, refactor
 
         if not to_next:
+            q = models.Question.objects.get(pk=target['id'])
+            q.mistakes_count += 1
+            q.save()
+
             if show_answer:
                 return JsonResponse({'result': 'show_answer',
                                      'question': target['question_text'],
@@ -159,6 +163,9 @@ def check(request, course_id, lesson_id):
                                  'score': F'Your score: {score}. {"Learning is a process and progress!" if score <= 0 else "Well done!"}'})
         else:
             title = F'Well done! You have finished the lesson with score {request.session["score"]}.'
+            lesson.attendance_count += 1
+            lesson.save()
+
             return JsonResponse({'result': 'ok',
                                  'question': title,
                                  'last': True,
