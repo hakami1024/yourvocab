@@ -69,7 +69,7 @@ def courses(request):
 
 
 @login_required
-def course(request, course_id = None):
+def course(request, course_id=None):
     if request.method == 'POST':
         form = forms.CourseForm(request.POST)
 
@@ -97,6 +97,19 @@ def course(request, course_id = None):
         return render(request, 'yourvocab/new_course.html', {'form': forms.CourseForm()})
 
 
+def assess_answer(target, answer, session, show_answer, no_score_upd):
+    if no_score_upd:
+        return True, session['score']
+    if show_answer:
+        session['qa'].append(target)
+        return False, session['score'] - session['show_a_penalty']
+
+    if target['answer_text'].strip() == answer.strip():
+        return True, session['score'] + session['bonus']
+
+    return False, session['score'] - session['wrong_a_penalty']
+
+
 @login_required
 def check(request, course_id, lesson_id):
     course = models.Course.objects.get(pk=course_id)
@@ -107,17 +120,49 @@ def check(request, course_id, lesson_id):
         return server_error(request)
 
     if request.method == 'POST':
-        qa = request.session['qa']
-        question_index = request.session['question_index']+1
+        show_answer = request.POST['show_answer'] == 'true'
+        no_score_upd = request.POST['no_score_upd'] == 'true'
 
-        if question_index <= len(qa):
+        answer = request.POST['answer']
+        question_index = request.session['question_index']
+        qa = request.session['qa']
+
+        target = qa[question_index]
+
+        to_next, score = assess_answer(target, answer, request.session, show_answer, no_score_upd)
+        request.session['score'] = score
+        qa = request.session['qa']  # could have been changed in assess_answer #TODO: smells, refactor
+
+        if not to_next:
+            if show_answer:
+                return JsonResponse({'result': 'show_answer',
+                                     'question': target['question_text'],
+                                     'score': F'Your score: {score}.',
+                                     'last': False,
+                                     'answer': 'The right answer was: ' + target['answer_text']})
+            else:
+                return JsonResponse({'result': 'mistake',
+                                     'question': target['question_text'],
+                                     'score': F'Your score: {score}.',
+                                     'last': False,
+                                     'answer': 'The right answer was: ' + target['answer_text']
+                                     })
+
+        if question_index < len(qa) - 1:
+            question_index += 1
             request.session['question_index'] = question_index
 
-            title = F'Question {question_index} out of {len(qa)}. {qa[question_index-1]["question_text"]}'
-            return JsonResponse({'result': 'ok', 'question': title, 'last': False})
+            title = F'Question {question_index + 1} out of {len(qa)}. {qa[question_index]["question_text"]}'
+            return JsonResponse({'result': 'ok',
+                                 'question': title,
+                                 'last': False,
+                                 'score': F'Your score: {score}. {"Learning is a process and progress!" if score <= 0 else "Well done!"}'})
         else:
-            title = F'Well done! You have finished the lesson with score {request.session["score"]}'
-            return JsonResponse({'result': 'ok', 'question': title, 'last': True})
+            title = F'Well done! You have finished the lesson with score {request.session["score"]}.'
+            return JsonResponse({'result': 'ok',
+                                 'question': title,
+                                 'last': True,
+                                 'score': "Keep learning! No pain no gain!" if score <= 0 else "You are awesome."})
 
     if len(qa) == 0:
         return server_error(request)
@@ -127,8 +172,14 @@ def check(request, course_id, lesson_id):
     request.session['qa'] = [{'question_text': i.question_text,
                               'answer_text': i.answer_text,
                               'id': i.id} for i in qa]
-    request.session['question_index'] = 1
+    request.session['question_index'] = 0
     request.session['score'] = 0
+
+    setup = models.CourseStudent.objects.filter(course=course, user=request.user).first()
+
+    request.session['bonus'] = setup.answer_bonus
+    request.session['wrong_a_penalty'] = setup.mistake_penalty
+    request.session['show_a_penalty'] = setup.show_answer_penalty
 
     qa_pair = qa[0]
     questions_count = len(qa)
@@ -139,8 +190,9 @@ def check(request, course_id, lesson_id):
                                                     'questions_count': questions_count,
                                                     'qa': qa_pair})
 
+
 @login_required
-def lesson(request, course_id, lesson_id = None):
+def lesson(request, course_id, lesson_id=None):
     course = models.Course.objects.get(pk=course_id)
 
     if request.method == 'POST':

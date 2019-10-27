@@ -1,20 +1,29 @@
 {% extends 'base.html' %}
 
 {% block content %}
+    {% load static %}
+    <script src="{% static 'js/yourvocab.js' %}"></script>
+
     <p class="h2"> {{ course.name }}</p>
 
     <p class="h3"> {{ lesson.name }}</p>
 
-    <form method="post" onsubmit="return submitForm(this);">
+    <form method="post" id = 'test_form' onsubmit="return submitForm(false, false);">
         <p class="h4" id="Question"> Question {{ question_index }} out
             of {{ questions_count }}. {{ qa.question_text }}</p>
 
         {% csrf_token %}
         <div id="RespondingPart">
-            <p>Answer: <input name="answer" type="text"/></p>
-            <a href="#">Show right answer</a>
+            <p>Answer: <input name="answer" type="text" id="answer_field"/></p>
+            <div><a href="#" onclick="return submitForm(true, false);">Show right answer</a></div>
             <button type="submit">Submit</button>
+            <div><p id="mistake_field" style="display: none;">Wrong answer. Try again or press 'Show answer'.</p></div>
         </div>
+        <div id="hint_row" style="display: none;">
+            <p id="hint_field"></p>
+            <button type="button" onclick="return submitForm(false, true)">Next</button>
+        </div>
+        <div><p id="score_field">Initial score: 0. Good luck!</p></div>
     </form>
 
 {% endblock content %}
