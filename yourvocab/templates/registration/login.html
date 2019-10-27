@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <h2>Log in to YourVocab</h2>
+    {% if form.errors %}
+        <p style="color: red">Your username and password didn't match. Please try again.</p>
+    {% endif %}
+    <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{{ next }}"/>
+        <table>
+            {{ form.as_table }}
+        </table>
+        <button type="submit">Log in</button>
+        <div>
+            <a href="/signup">New to YourVocab? Sign up</a>
+        </div>
+    </form>
+{% endblock %}

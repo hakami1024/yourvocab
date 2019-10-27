@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<p class="h2"> {{ course.name }}</p>
+
+<div class="col-md-8">
+    <p class="col-md-8">Right answer bonus: +{{ setup.answer_bonus }}</p>
+    <p class="col-md-8">Wrong answer penalty: -{{ setup.mistake_penalty }}</p>
+    <p class="col-md-8">Show answer penalty: -{{ setup.show_answer_penalty }}</p>
+</div>
+
+<div class="col-md-8">
+    {% for lesson in lessons %}
+        <div class="post">
+            <h2><a href="/course/{{ course.id }}/lesson/{{ lesson.id }}">{{ lesson.name }}</a></h2>
+        </div>
+    {% endfor %}
+</div>
+
+<div class="col-md-8">
+
+    <a href="/course/{{ course.id }}/lesson" class="btn btn-primary">Add lesson</a>
+</div>
+{% endblock content %}

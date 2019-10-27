@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<p class="h2"> {{ lesson.name }}</p>
+
+<div class="col-md-8">
+    <p class="col-md-8">Lesson was attended {{ lesson.attendance_count}} times</p>
+</div>
+
+<div class="col-md-8">
+    {% for q_a in qa %}
+        <div>
+            <p>Question: {{ q_a.question_text }}</p>
+            <p>Answer: {{ q_a.answer_text }}</p>
+            <p>Mistakes were made {{ q_a.mistakes_count }} times</p>
+        </div>
+    {% endfor %}
+</div>
+
+<div class="col-md-8">
+
+    <a href="" class="btn btn-primary">Edit lesson</a>
+</div>
+{% endblock content %}
