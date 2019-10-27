@@ -1,6 +1,9 @@
+import random
+
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.contrib.sites.shortcuts import get_current_site
+from django.http import JsonResponse
 from django.shortcuts import render, redirect
 from django.template.loader import render_to_string
 from django.utils.encoding import force_bytes, force_text
@@ -95,6 +98,48 @@ def course(request, course_id = None):
 
 
 @login_required
+def check(request, course_id, lesson_id):
+    course = models.Course.objects.get(pk=course_id)
+    lesson = models.Lesson.objects.get(pk=lesson_id)
+
+    qa = list(models.Question.objects.filter(lesson=lesson).all())
+    if len(qa) == 0:
+        return server_error(request)
+
+    if request.method == 'POST':
+        qa = request.session['qa']
+        question_index = request.session['question_index']+1
+
+        if question_index <= len(qa):
+            request.session['question_index'] = question_index
+
+            title = F'Question {question_index} out of {len(qa)}. {qa[question_index-1]["question_text"]}'
+            return JsonResponse({'result': 'ok', 'question': title, 'last': False})
+        else:
+            title = F'Well done! You have finished the lesson with score {request.session["score"]}'
+            return JsonResponse({'result': 'ok', 'question': title, 'last': True})
+
+    if len(qa) == 0:
+        return server_error(request)
+
+    random.shuffle(qa)
+
+    request.session['qa'] = [{'question_text': i.question_text,
+                              'answer_text': i.answer_text,
+                              'id': i.id} for i in qa]
+    request.session['question_index'] = 1
+    request.session['score'] = 0
+
+    qa_pair = qa[0]
+    questions_count = len(qa)
+
+    return render(request, 'yourvocab/check.html', {'course': course,
+                                                    'lesson': lesson,
+                                                    'question_index': 1,
+                                                    'questions_count': questions_count,
+                                                    'qa': qa_pair})
+
+@login_required
 def lesson(request, course_id, lesson_id = None):
     course = models.Course.objects.get(pk=course_id)
 
@@ -123,5 +168,5 @@ def lesson(request, course_id, lesson_id = None):
     if lesson_id:
         lesson = models.Lesson.objects.get(pk=lesson_id)
         qa = models.Question.objects.filter(lesson=lesson).all()
-        return render(request, 'yourvocab/lesson.html', {'lesson': lesson, 'qa': qa})
+        return render(request, 'yourvocab/lesson.html', {'course': course, 'lesson': lesson, 'qa': qa})
     return render(request, 'yourvocab/new_lesson.html', {'form': forms.LessonForm()})

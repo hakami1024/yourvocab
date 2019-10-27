@@ -15,6 +15,34 @@
     <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
     <link rel="stylesheet" href="{% static 'css/yourvocab.css' %}">
 
+    <script>
+        "use strict";
+
+        function submitForm(oFormElement) {
+            console.log(oFormElement);
+            var xhr = new XMLHttpRequest();
+            xhr.onload = function () {
+                var resp = JSON.parse(xhr.responseText);
+                if (resp['result'] == 'ok') {
+                    if(resp['last']){
+                        $('#RespondingPart').hide();
+                    }
+                    $('#Question').text(resp['question']);
+                } else {
+                    alert(xhr.responseText)
+                }
+
+                console.log(xhr.responseText)
+            } // success case
+            xhr.onerror = function () {
+                alert(xhr.responseText);
+                console.log(xhr.responseText)
+            } // failure case
+            xhr.open(oFormElement.method, oFormElement.action, true);
+            xhr.send(new FormData(oFormElement));
+            return false;
+        }
+    </script>
 </head>
 
 <body>
@@ -30,19 +58,19 @@
         <div class="collapse navbar-collapse" id="navbarResponsive">
             <ul class="navbar-nav ml-auto">
                 {% if not request.user.is_authenticated %}
-                <li class="nav-item">
-                    <a class="nav-link" href="/accounts/login">Login</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/signup">Sign Up</a>
-                </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/accounts/login">Login</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/signup">Sign Up</a>
+                    </li>
                 {% else %}
                     <li class="nav-item">
-                    <a class="nav-link" href="#">{{ request.user.username }}</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/logout">Logout</a>
-                </li>
+                        <a class="nav-link" href="#">{{ request.user.username }}</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/logout">Logout</a>
+                    </li>
                 {% endif %}
             </ul>
         </div>

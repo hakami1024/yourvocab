@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <p class="h2"> {{ course.name }}</p>
+
+    <p class="h3"> {{ lesson.name }}</p>
+
+    <form method="post" onsubmit="return submitForm(this);">
+        <p class="h4" id="Question"> Question {{ question_index }} out
+            of {{ questions_count }}. {{ qa.question_text }}</p>
+
+        {% csrf_token %}
+        <div id="RespondingPart">
+            <p>Answer: <input name="answer" type="text"/></p>
+            <a href="#">Show right answer</a>
+            <button type="submit">Submit</button>
+        </div>
+    </form>
+
+{% endblock content %}
