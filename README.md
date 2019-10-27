@@ -7,4 +7,4 @@
 
 ## Register to start!
 
-We only need your email and a nickname.
+We only need your email and a nickname!
