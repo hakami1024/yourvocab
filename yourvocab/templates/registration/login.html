@@ -8,7 +8,7 @@
     <form method="post">
         {% csrf_token %}
         <input type="hidden" name="next" value="{{ next }}"/>
-        <table>
+        <table class="table">
             {{ form.as_table }}
         </table>
         <button class='btn btn-primary' type="submit">Log in</button>

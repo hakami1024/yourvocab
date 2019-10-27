@@ -24,6 +24,7 @@ class Course(models.Model):
     author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     name = models.CharField(max_length=200)
     public = models.BooleanField(default=False)
+    helper_symbols = models.CharField(max_length=200)
 
 
 class Lesson(models.Model):

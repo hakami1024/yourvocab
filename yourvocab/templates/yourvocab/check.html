@@ -14,6 +14,11 @@
 
         {% csrf_token %}
         <div id="RespondingPart">
+            <div class="my-2">
+            {% for s in course.helper_symbols %}
+                <button class="d-inline-block btn btn-outline-primary" onclick="$('#answer_field').val($('#answer_field').val() + '{{ s }}'); return false;">{{ s }}</button>
+            {% endfor %}
+            </div>
             <p>Answer: <input name="answer" type="text" id="answer_field"/></p>
             <div><a href="#" onclick="return submitForm(true, false);">Show right answer</a></div>
             <button class='btn btn-primary' type="submit">Submit</button>

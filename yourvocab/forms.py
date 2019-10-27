@@ -21,7 +21,11 @@ class CourseForm(forms.ModelForm):
 
     class Meta:
         model = models.Course
-        fields = ('name', 'public', 'right_answer_bonus', 'wrong_answer_penalty', 'show_answer_penalty')
+        fields = ('name', 'public', 'helper_symbols', 'right_answer_bonus', 'wrong_answer_penalty', 'show_answer_penalty')
+        help_texts = {
+            'helper_symbols': 'For example, for German that could be: ÄäÖöÜüß (no spaces or commas are required)',
+            'public': 'Check, if you want to share the course with everyone',
+        }
 
 
 class LessonForm(forms.ModelForm):
