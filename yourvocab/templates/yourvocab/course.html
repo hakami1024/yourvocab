@@ -13,7 +13,8 @@
 <div class="col-md-8">
     {% for lesson in lessons %}
         <div class="post">
-            <h2><a href="/course/{{ course.id }}/lesson/{{ lesson.id }}">{{ lesson.name }}</a></h2>
+            <h2 class="d-inline-block"><a class="pt-3 pr-3" href="/course/{{ course.id }}/lesson/{{ lesson.id }}">{{ lesson.name }}</a></h2>
+            <a href="/course/{{ course.id }}/lesson/{{ lesson.id }}/check" class="btn btn-outline-primary d-inline-block mb-3">Run lesson</a>
         </div>
     {% endfor %}
 </div>
