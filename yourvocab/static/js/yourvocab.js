@@ -45,3 +45,14 @@ function submitForm(show_answer, no_upd) {
     xhr.send(fd);
     return false;
 }
+
+function insert_symbol(editor, symbol) {
+    for (var m in editor.session.getMarkers(false)) {
+        var marker = editor.session.getMarkers(false)[m];
+        if (marker.type === 'line') {
+            editor.session.insert(marker.range.start, symbol);
+        }
+       editor.session._signal("changeBackMarker");
+    }
+    editor.focus()
+}

@@ -1,19 +1,75 @@
 {% extends 'base.html' %}
 
 {% block content %}
+    {% load static %}
+    <script src="{% static 'js/yourvocab.js' %}"></script>
+
     <div class="container">
         <div class="row">
             <div class="col">
                 <p>
-                    <form action="" method="post">
+                <form action="" method="post">
                     {% csrf_token %}
-                    <table class="table">
-                    {{ form.as_table }}
+                    {{ form.non_field_errors }}
+
+                    {{ form.source.errors }}
+                    {{ form.source }}
+
+                    <table>
+
+                        <tr>
+                            <th>{{ form.name.label_tag }}</th>
+                            <td>
+                                {{ form.name.errors }}
+                                {{ form.name }}
+                            </td>
+                        </tr>
                     </table>
-                    <input class='btn btn-primary' type="submit" value="Create" />
-                    </form>
+                    <table>
+                        <tr>
+                            <th>{{ form.questions.label_tag }}</th>
+                            <th>{{ form.answers.label_tag }}</th>
+                        </tr>
+
+                        <tr>
+                            <td>
+                                <div class="text-center">
+                                    {% for s in helper_symbols %}
+                                        <button class="d-inline-block btn btn-outline-primary"
+                                                onclick="insert_symbol(editor, '{{ s }}'); return false;">{{ s }}
+                                        </button>
+                                    {% endfor %}
+                                </div>
+                                <div id="editor_questions">{{ form.questions }}</div>
+                                {{ form.questions.errors }}
+                            </td>
+                            <td>
+                                <div class="text-center">
+                                    {% for s in helper_symbols %}
+                                        <button class="d-inline-block btn btn-outline-primary"
+                                                onclick="insert_symbol(editor2, '{{ s }}'); return false;">{{ s }}
+                                        </button>
+                                    {% endfor %}
+                                </div>
+                                <div id="editor_answers">{{ form.answers }}</div>
+                                {{ form.answers.errors }}
+                            </td>
+                        </tr>
+                    </table>
+                    <input class='btn btn-primary' type="submit" value="Create"/>
+                </form>
                 </p>
             </div>
         </div>
     </div>
+
+    {% load static %}
+    <script src="{% static 'js/ace.js' %}" type="text/javascript" charset="utf-8"></script>
+    <script>
+        var editor = ace.edit("editor_questions");
+        editor.session.setMode("ace/mode/text");
+        var editor2 = ace.edit("editor_answers");
+        editor.session.setMode("ace/mode/text");
+    </script>
+
 {% endblock %}
