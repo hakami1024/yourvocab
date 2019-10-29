@@ -1,3 +1,4 @@
+import datetime
 import random
 
 from django.contrib.auth import login
@@ -61,7 +62,7 @@ def courses(request):
     if request.user.is_authenticated:
         user = request.user
 
-        mycourses = models.CourseStudent.objects.filter(user=user).all()
+        mycourses = models.CourseStudent.objects.filter(student=user).all()
         course_list = list([x.course for x in mycourses])
         return render(request, 'yourvocab/courses_list.html', {'courses': course_list})
     else:
@@ -78,7 +79,7 @@ def course(request, course_id=None):
             course.author = request.user
             course.save()
 
-            sign = models.CourseStudent(user=request.user,
+            sign = models.CourseStudent(student=request.user,
                                         course=course,
                                         answer_bonus=form.cleaned_data['right_answer_bonus'],
                                         mistake_penalty=form.cleaned_data['wrong_answer_penalty'],
@@ -88,7 +89,7 @@ def course(request, course_id=None):
 
     if course_id:
         cur_course = models.Course.objects.get(pk=course_id)
-        cur_setup = models.CourseStudent.objects.get(course=cur_course, user=request.user)
+        cur_setup = models.CourseStudent.objects.get(course=cur_course, student=request.user)
         lessons = models.Lesson.objects.filter(course=cur_course).all()
         return render(request, 'yourvocab/course.html', {'course': cur_course,
                                                          'setup': cur_setup,
@@ -97,16 +98,28 @@ def course(request, course_id=None):
         return render(request, 'yourvocab/new_course.html', {'form': forms.CourseForm()})
 
 
-def assess_answer(target, answer, session, show_answer, no_score_upd):
+def assess_answer(target, answer, request, show_answer, no_score_upd):
+    session = request.session
     if no_score_upd:
         return True, session['score']
+
+    q = models.Question.objects.get(pk=target['id'])
+
     if show_answer:
         session['qa'].append(target)
+        session['mistakes_count'] += 1
+        qs = models.QuestionStudent.objects.filter(question=q, student=request.user).first()
+        qs.mistakes_count += 1
+        qs.save()
         return False, session['score'] - session['show_a_penalty']
 
     if target['answer_text'].strip() == answer.strip():
         return True, session['score'] + session['bonus']
 
+    session['mistakes_count'] += 1
+    qs = models.QuestionStudent.objects.filter(question=q, student=request.user).first()
+    qs.mistakes_count += 1
+    qs.save()
     return False, session['score'] - session['wrong_a_penalty']
 
 
@@ -129,14 +142,11 @@ def check(request, course_id, lesson_id):
 
         target = qa[question_index]
 
-        to_next, score = assess_answer(target, answer, request.session, show_answer, no_score_upd)
+        to_next, score = assess_answer(target, answer, request, show_answer, no_score_upd)
         request.session['score'] = score
         qa = request.session['qa']  # could have been changed in assess_answer #TODO: smells, refactor
 
         if not to_next:
-            q = models.Question.objects.get(pk=target['id'])
-            q.mistakes_count += 1
-            q.save()
 
             if show_answer:
                 return JsonResponse({'result': 'show_answer',
@@ -166,6 +176,15 @@ def check(request, course_id, lesson_id):
             lesson.attendance_count += 1
             lesson.save()
 
+            elapsed_time = datetime.datetime.now().timestamp() - request.session['start_time']
+            score_data = models.LessonStudent(student=request.user,
+                                              lesson=lesson,
+                                              date_time=datetime.datetime.now(),
+                                              elapsed_time=elapsed_time,
+                                              points=score,
+                                              mistakes_count=request.session['mistakes_count'])
+            score_data.save()
+
             return JsonResponse({'result': 'ok',
                                  'question': title,
                                  'last': True,
@@ -181,12 +200,14 @@ def check(request, course_id, lesson_id):
                               'id': i.id} for i in qa]
     request.session['question_index'] = 0
     request.session['score'] = 0
+    request.session['start_time'] = datetime.datetime.now().timestamp()
 
-    setup = models.CourseStudent.objects.filter(course=course, user=request.user).first()
+    setup = models.CourseStudent.objects.filter(course=course, student=request.user).first()
 
     request.session['bonus'] = setup.answer_bonus
     request.session['wrong_a_penalty'] = setup.mistake_penalty
     request.session['show_a_penalty'] = setup.show_answer_penalty
+    request.session['mistakes_count'] = 0
 
     qa_pair = qa[0]
     questions_count = len(qa)
@@ -224,6 +245,9 @@ def lesson(request, course_id, lesson_id=None):
                 qa = models.Question(question_text=q, answer_text=a, lesson=lesson)
                 qa.save()
 
+                qs = models.QuestionStudent(question=qa, student=request.user, mistakes_count=0)
+                qs.save()
+
             return redirect(F'/course/{course.id}')
     elif lesson:
         qa = models.Question.objects.filter(lesson=lesson).all()
@@ -235,3 +259,35 @@ def lesson(request, course_id, lesson_id=None):
         form = forms.LessonForm()
 
     return render(request, 'yourvocab/new_lesson.html', {'form': form, 'helper_symbols': course.helper_symbols})
+
+
+def lesson_stats(request, course_id, lesson_id):
+    course = models.Course.objects.get(pk=course_id)
+    lesson = models.Lesson.objects.get(pk=lesson_id)
+
+    qa = models.Question.objects.filter(lesson=lesson)
+    qs = [models.QuestionStudent.objects.get(question=q, student=request.user) for q in qa]
+
+    scores = models.LessonStudent.objects.filter(lesson=lesson, student=request.user)
+
+    count = qa.count()
+    mistake_colors = ['rgba(255, 99, 132, 0.2)', ] * count
+    mistake_borders = ['rgba(255, 99, 132, 1)', ] * count
+    mistake_data = [q.mistakes_count for q in qs]
+    mistake_label = [q.question_text for q in qa]
+
+    attendance_dict = [{'x': s.date_time.strftime('%Y-%m-%d %H:%M'), 'y': s.points} for s in scores]
+
+    return render(request, 'yourvocab/lesson_stats.html', {'course': course,
+                                                           'lesson': lesson,
+                                                           'attendance_dict': attendance_dict,
+                                                           'mistake_colors': mistake_colors,
+                                                           'mistake_borders': mistake_borders,
+                                                           'mistake_data': mistake_data,
+                                                           'mistake_label': mistake_label})
+
+
+def lesson_delete(request, course_id, lesson_id):
+    course = models.Course.objects.get(pk=course_id)
+    models.Lesson.objects.get(pk=lesson_id, course=course).delete()
+    return JsonResponse({'result': 'ok'})

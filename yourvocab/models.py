@@ -5,7 +5,6 @@ from django.contrib.auth.models import User
 from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from django import forms
 
 
 class Profile(models.Model):
@@ -33,24 +32,30 @@ class Lesson(models.Model):
     attendance_count = models.IntegerField(default=0)
 
 
+class Question(models.Model):
+    question_text = models.TextField()
+    answer_text = models.TextField()
+    lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE, editable=False)
+
+
 class CourseStudent(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    student = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     course = models.ForeignKey(Course, on_delete=models.CASCADE, editable=False)
     answer_bonus = models.SmallIntegerField(default=5)
     mistake_penalty = models.SmallIntegerField(default=1)
     show_answer_penalty = models.SmallIntegerField(default=2)
 
 
-class Question(models.Model):
-    question_text = models.TextField()
-    answer_text = models.TextField()
+class LessonStudent(models.Model):
+    student = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, editable=False)
     lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE, editable=False)
-    mistakes_count = models.IntegerField(default=0)
-
-
-class Score(models.Model):
-    course_student = models.ForeignKey(CourseStudent, on_delete=models.CASCADE, editable=False)
     date_time = models.DateTimeField()
     elapsed_time = models.BigIntegerField()
     points = models.IntegerField()
     mistakes_count = models.IntegerField()
+
+
+class QuestionStudent(models.Model):
+    question = models.ForeignKey(Question, on_delete=models.CASCADE)
+    student = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    mistakes_count = models.IntegerField(default=0)

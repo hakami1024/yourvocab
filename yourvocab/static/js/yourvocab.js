@@ -52,7 +52,26 @@ function insert_symbol(editor, symbol) {
         if (marker.type === 'line') {
             editor.session.insert(marker.range.start, symbol);
         }
-       editor.session._signal("changeBackMarker");
+        editor.session._signal("changeBackMarker");
     }
     editor.focus()
+}
+
+function delete_lesson(form, url) {
+    if (confirm('Are you sure?')) {
+        var xhr = new XMLHttpRequest();
+        xhr.onload = function () {
+            var resp = JSON.parse(xhr.responseText);
+            if (resp['result'] === 'ok') {
+                form.style.display = 'none';
+            }
+        };
+        xhr.onerror = function () {
+            alert(xhr.responseText);
+            console.log(xhr.responseText)
+        };
+        xhr.open('GET', url, true);
+        xhr.send();
+    }
+    return false;
 }

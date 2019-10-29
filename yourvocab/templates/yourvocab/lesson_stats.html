@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+    {% load static %}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.bundle.min.js"></script>
+
+    <p class="h2"> {{ course.name }}</p>
+
+    <p class="h3"> {{ lesson.name }}</p>
+
+    <div class="col-md-8">
+        <p class="col-md-8">Lesson was attended {{ lesson.attendance_count }} times</p>
+    </div>
+
+    {% if lesson.attendance_count > 0 %}
+        <canvas id="attendance_chart" width="400" height="400"></canvas>
+        <br/>
+        <canvas id="performance_chart" width="400" height="400"></canvas>
+        <script>
+            var attendance_data = {{attendance_dict|safe}};
+
+            var chart = new Chart(document.getElementById("attendance_chart"), {
+                "type": "line",
+                "data": {
+                    'datasets': [
+                        {
+                            'data': attendance_data,
+                            'label': 'Total score',
+                            backgroundColor: [
+                                'rgba(99, 255, 132, 0.2)',
+                            ],
+                            borderColor: [
+                                'rgba(99, 255, 132, 1)',
+                            ],
+                        }
+                    ],
+                },
+                "options": {
+                    "scales": {
+                        "xAxes": [{
+                            type: 'time',
+                            time: {
+                                parser: "YYYY-M-D HH:mm",
+                                unit: 'minute',
+                                unitStepSize: 1,
+                                displayFormats: {
+                                    'minute': 'YYYY-M-D HH:mm',
+                                }
+                            }
+                        }],
+                        "yAxes": [{
+                            "ticks": {
+                                "beginAtZero": true
+                            }
+                        }]
+                    }
+                }
+            });
+
+            var performance_data = {
+                labels: {{ mistake_label|safe }},
+                datasets: [{
+                    label: 'Mistake counts',
+                    data: {{ mistake_data|safe }},
+                    backgroundColor: {{mistake_colors|safe}},
+                    borderColor: {{mistake_borders|safe}},
+                }]
+            };
+
+            var myBarChart = new Chart('performance_chart', {
+                'type': 'bar',
+                'data': performance_data,
+            });
+        </script>
+    {% endif %}
+{% endblock content %}

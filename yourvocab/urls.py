@@ -10,6 +10,8 @@ urlpatterns = [
     path('course/<int:course_id>/lesson', views.lesson),
     path('course/<int:course_id>/lesson/<int:lesson_id>', views.lesson),
     path('course/<int:course_id>/lesson/<int:lesson_id>/check', views.check),
+    path('course/<int:course_id>/lesson/<int:lesson_id>/stats', views.lesson_stats),
+    path('course/<int:course_id>/lesson/<int:lesson_id>/delete', views.lesson_delete),
     path('signup', views.signup),
     path('account_activation_sent', views.account_activation_sent),
     path('activate/<slug:uidb64>/<slug:token>/', views.activate, name='activate'),
