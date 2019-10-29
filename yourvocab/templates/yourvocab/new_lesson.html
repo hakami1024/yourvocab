@@ -40,8 +40,9 @@
                                         </button>
                                     {% endfor %}
                                 </div>
-                                <div id="editor_questions">{{ form.questions }}</div>
                                 {{ form.questions.errors }}
+                                <div id="editor_questions">{{ form.questions }}</div>
+                                <div style="display: none;">{{ form.questions }}</div>
                             </td>
                             <td>
                                 <div class="text-center">
@@ -51,8 +52,9 @@
                                         </button>
                                     {% endfor %}
                                 </div>
-                                <div id="editor_answers">{{ form.answers }}</div>
                                 {{ form.answers.errors }}
+                                <div id="editor_answers">{{ form.answers }}</div>
+                                <div style="display: none;">{{ form.answers }}</div>
                             </td>
                         </tr>
                     </table>
@@ -68,8 +70,15 @@
     <script>
         var editor = ace.edit("editor_questions");
         editor.session.setMode("ace/mode/text");
+        editor.getSession().on("change", function () {
+            $("#{{ form.questions.auto_id }}").val(editor.getSession().getValue());
+        });
+
         var editor2 = ace.edit("editor_answers");
-        editor.session.setMode("ace/mode/text");
+        editor2.session.setMode("ace/mode/text");
+        editor2.getSession().on("change", function () {
+            $("#{{ form.answers.auto_id }}").val(editor2.getSession().getValue());
+        });
     </script>
 
 {% endblock %}

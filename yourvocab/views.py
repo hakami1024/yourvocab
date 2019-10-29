@@ -221,11 +221,11 @@ def lesson(request, course_id, lesson_id=None):
                 qa.save()
 
             return redirect(F'/course/{course.id}')
-
-        return server_error()
-
-    if lesson_id:
+    elif lesson_id:
         lesson = models.Lesson.objects.get(pk=lesson_id)
         qa = models.Question.objects.filter(lesson=lesson).all()
         return render(request, 'yourvocab/lesson.html', {'course': course, 'lesson': lesson, 'qa': qa})
-    return render(request, 'yourvocab/new_lesson.html', {'form': forms.LessonForm()})
+    else:
+        form = forms.LessonForm()
+
+    return render(request, 'yourvocab/new_lesson.html', {'form': form, 'helper_symbols': course.helper_symbols})
