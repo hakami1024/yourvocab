@@ -201,9 +201,10 @@ def check(request, course_id, lesson_id):
 @login_required
 def lesson(request, course_id, lesson_id=None):
     course = models.Course.objects.get(pk=course_id)
+    lesson = models.Lesson.objects.get(pk=lesson_id) if lesson_id else None
 
     if request.method == 'POST':
-        form = forms.LessonForm(request.POST)
+        form = forms.LessonForm(request.POST, instance=lesson)
 
         if form.is_valid():
             lesson = form.save(commit=False)
@@ -216,15 +217,20 @@ def lesson(request, course_id, lesson_id=None):
             if len(questions) != len(answers):
                 return server_error()
 
+            # Regenerating all questions for particular lesson:
+            models.Question.objects.filter(lesson=lesson).delete()
+
             for (q, a) in zip(questions, answers):
                 qa = models.Question(question_text=q, answer_text=a, lesson=lesson)
                 qa.save()
 
             return redirect(F'/course/{course.id}')
-    elif lesson_id:
-        lesson = models.Lesson.objects.get(pk=lesson_id)
+    elif lesson:
         qa = models.Question.objects.filter(lesson=lesson).all()
-        return render(request, 'yourvocab/lesson.html', {'course': course, 'lesson': lesson, 'qa': qa})
+        questions = '\n'.join([q.question_text for q in qa])
+        answers = '\n'.join([q.answer_text for q in qa])
+        form = forms.LessonForm({'name': lesson.name, 'questions': questions, 'answers': answers}, instance=lesson)
+        return render(request, 'yourvocab/new_lesson.html', {'form': form, 'helper_symbols': course.helper_symbols})
     else:
         form = forms.LessonForm()
 
