@@ -36,3 +36,27 @@ class LessonForm(forms.ModelForm):
         model = models.Lesson
         fields = ('name', 'questions', 'answers')
 
+    def is_valid(self):
+        """Check if value consists only of valid emails."""
+        # Use the parent's handling of required fields, etc.
+        is_valid = super().is_valid()
+        questions = self.cleaned_data['questions'].split('\r\n')
+        answers = self.cleaned_data['answers'].split('\r\n')
+
+        if len(questions) != len(answers):
+            if len(questions) < len(answers):
+                self.add_error('questions', 'Questions should have as many lines as answers')
+            else:
+                self.add_error('answers', 'Answers should have as many lines as questions')
+            is_valid = False
+
+        if any([not q.strip() for q in questions]):
+            self.add_error('questions', 'Empty lines are not permitted')
+            is_valid = False
+
+        if any([not a.strip() for a in answers]):
+            self.add_error('answers', 'Empty lines are not permitted')
+            is_valid = False
+
+        return is_valid
+
