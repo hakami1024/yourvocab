@@ -47,12 +47,17 @@ function submitForm(show_answer, no_upd) {
 }
 
 function insert_symbol(editor, symbol) {
+    var inserted = false;
     for (var m in editor.session.getMarkers(false)) {
         var marker = editor.session.getMarkers(false)[m];
         if (marker.type === 'line') {
             editor.session.insert(marker.range.start, symbol);
+            inserted = true;
         }
         editor.session._signal("changeBackMarker");
+    }
+    if(!inserted){
+        editor.session.insert(editor.getCursorPosition(), symbol);
     }
     editor.focus()
 }
