@@ -5,7 +5,7 @@
 
     <p class="h3"> {{ lesson.name }}</p>
 
-    <form method="post" id = 'test_form' onsubmit="return submitForm(false, false);">
+    <form method="post" id = 'test_form' autocomplete="off" onsubmit="return submitForm(false, false);">
         <p class="h4" id="Question"> Question {{ question_index }} out
             of {{ questions_count }}. {{ qa.question_text }}</p>
 
@@ -13,10 +13,10 @@
         <div id="RespondingPart">
             <div class="my-2">
             {% for s in course.helper_symbols %}
-                <button class="d-inline-block btn btn-outline-primary" onclick="$('#answer_field').val($('#answer_field').val() + '{{ s }}'); return false;">{{ s }}</button>
+                <a class="d-inline-block btn btn-outline-primary" onclick="var f = $('#answer_field'); f.val($('#answer_field').val() + '{{ s }}'); f.focus(); f.scrollIntoView(); f.select(); return false;">{{ s }}</a>
             {% endfor %}
             </div>
-            <p>Answer: <input name="answer" type="text" id="answer_field"/></p>
+            <p>Answer: <input name="answer" type="text" id="answer_field" tabindex="0" autofocus/></p>
             <div><a href="#" onclick="return submitForm(true, false);">Show right answer</a></div>
             <button class='btn btn-primary' type="submit">Submit</button>
             <div><p id="mistake_field" style="display: none;">Wrong answer. Try again or press 'Show answer'.</p></div>
