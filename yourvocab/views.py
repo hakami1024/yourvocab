@@ -230,22 +230,33 @@ def lesson(request, course_id, lesson_id=None):
         if form.is_valid():
             lesson = form.save(commit=False)
             lesson.course = course
-            lesson.save()
 
             questions = form.cleaned_data['questions'].split('\r\n')
             answers = form.cleaned_data['answers'].split('\r\n')
 
             if len(questions) != len(answers):
-                return server_error()
+                return server_error(request)
+
+            lesson.save()
 
             # Regenerating all questions for particular lesson:
-            models.Question.objects.filter(lesson=lesson).delete()
+
+            last_qa = models.Question.objects.filter(lesson=lesson)
+            q_stats = {}
+            for last_q in last_qa:
+                qs = models.QuestionStudent.objects.get(question=last_q, student=request.user)
+                q_stats[(last_q.question_text, last_q.answer_text)] = qs.mistakes_count
+
+            last_qa.delete()
 
             for (q, a) in zip(questions, answers):
-                qa = models.Question(question_text=q, answer_text=a, lesson=lesson)
+                qa = models.Question(question_text=q.strip(), answer_text=a.strip(), lesson=lesson)
                 qa.save()
 
-                qs = models.QuestionStudent(question=qa, student=request.user, mistakes_count=0)
+                q_key = (q.strip(), a.strip())
+                mistakes_count = q_stats[q_key] if q_key in q_stats else 0
+
+                qs = models.QuestionStudent(question=qa, student=request.user, mistakes_count=mistakes_count)
                 qs.save()
 
             return redirect(F'/course/{course.id}')
