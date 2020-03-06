@@ -3,6 +3,7 @@ import random
 
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.forms import PasswordResetForm, SetPasswordForm
 from django.contrib.sites.shortcuts import get_current_site
 from django.http import JsonResponse
 from django.shortcuts import render, redirect
@@ -38,7 +39,8 @@ def signup(request):
 
 
 def account_activation_sent(request):
-    return render(request, 'account_activation_sent.html')
+    return render(request, 'instructions_message.html',
+                  {'message':'Please confirm your email address to complete the registration. '})
 
 
 def activate(request, uidb64, token):
@@ -55,7 +57,21 @@ def activate(request, uidb64, token):
         login(request, user)
         return redirect('/')
     else:
-        return render(request, 'account_activation_invalid.html')
+        return render(request, 'instructions_message.html',
+                      {'message': 'The confirmation link was invalid, possibly because it has already been used.'})
+
+
+def forgot_pass(request):
+    if request.method == 'POST':
+        form = PasswordResetForm(request.POST)
+        if form.is_valid():
+            form.save(from_email='noreply@yourvocab.heroku.com', request=request)
+            return render(request, 'instructions_message.html',
+                          {'message': 'Please check your email. '})
+
+    else:
+        form = PasswordResetForm()
+    return render(request, 'passreset.html', {'form': form})
 
 
 def courses(request):
